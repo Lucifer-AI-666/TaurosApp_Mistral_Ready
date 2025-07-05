@@ -1,0 +1,1 @@
+# TaurosApp_Mistral_Ready
