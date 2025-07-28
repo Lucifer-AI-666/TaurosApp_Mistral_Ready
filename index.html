@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="TaurosApp - Interfaccia chat moderna con tema GitHub">
+    <meta name="author" content="TaurosApp">
+    <title>TaurosApp Chat</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container" id="app">
+        <!-- Header -->
+        <header class="chat-header" role="banner">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1 class="app-title">
+                        <span class="app-icon">🐂</span>
+                        TaurosApp Chat
+                    </h1>
+                    <div class="connection-status" id="connectionStatus">
+                        <span class="status-indicator connected"></span>
+                        <span class="status-text">Connesso</span>
+                    </div>
+                </div>
+                <div class="header-controls">
+                    <button class="theme-toggle" id="themeToggle" aria-label="Cambia tema">
+                        <span class="theme-icon">🌙</span>
+                    </button>
+                    <button class="settings-btn" id="settingsBtn" aria-label="Impostazioni">
+                        <span class="settings-icon">⚙️</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Chat Area -->
+        <main class="chat-main" role="main">
+            <div class="chat-container">
+                <div class="messages-container" 
+                     id="messagesContainer" 
+                     role="log" 
+                     aria-live="polite" 
+                     aria-label="Messaggi chat">
+                    <!-- Welcome message -->
+                    <div class="message system-message">
+                        <div class="message-content">
+                            <p>Benvenuto in TaurosApp Chat! 🎉</p>
+                            <p>Inizia a chattare digitando un messaggio qui sotto.</p>
+                        </div>
+                        <div class="message-time">
+                            <time id="welcomeTime"></time>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Typing indicator -->
+                <div class="typing-indicator" id="typingIndicator" aria-hidden="true">
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <span class="typing-text">Qualcuno sta scrivendo...</span>
+                </div>
+            </div>
+        </main>
+
+        <!-- Input Area -->
+        <footer class="chat-footer" role="contentinfo">
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="messageInput"
+                        class="message-input"
+                        placeholder="Scrivi un messaggio... (Ctrl+Enter per inviare)"
+                        rows="1"
+                        maxlength="2000"
+                        aria-label="Campo messaggio"
+                        aria-describedby="inputHelp"></textarea>
+                    <div class="input-actions">
+                        <button 
+                            id="emojiBtn"
+                            class="input-btn emoji-btn"
+                            type="button"
+                            aria-label="Aggiungi emoji">
+                            😊
+                        </button>
+                        <button 
+                            id="attachBtn"
+                            class="input-btn attach-btn"
+                            type="button"
+                            aria-label="Allega file">
+                            📎
+                        </button>
+                        <button 
+                            id="sendBtn"
+                            class="input-btn send-btn"
+                            type="button"
+                            aria-label="Invia messaggio">
+                            <span class="send-icon">➤</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="input-help" id="inputHelp">
+                    <span class="char-count">
+                        <span id="charCount">0</span>/2000
+                    </span>
+                    <span class="shortcuts">
+                        Ctrl+Enter per inviare • Supporto Markdown
+                    </span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Emoji picker modal -->
+    <div class="emoji-picker" id="emojiPicker" aria-hidden="true">
+        <div class="emoji-grid">
+            <button class="emoji-btn" data-emoji="😊">😊</button>
+            <button class="emoji-btn" data-emoji="😄">😄</button>
+            <button class="emoji-btn" data-emoji="😁">😁</button>
+            <button class="emoji-btn" data-emoji="😆">😆</button>
+            <button class="emoji-btn" data-emoji="😅">😅</button>
+            <button class="emoji-btn" data-emoji="😂">😂</button>
+            <button class="emoji-btn" data-emoji="🤣">🤣</button>
+            <button class="emoji-btn" data-emoji="😭">😭</button>
+            <button class="emoji-btn" data-emoji="😘">😘</button>
+            <button class="emoji-btn" data-emoji="😍">😍</button>
+            <button class="emoji-btn" data-emoji="🤔">🤔</button>
+            <button class="emoji-btn" data-emoji="😎">😎</button>
+            <button class="emoji-btn" data-emoji="👍">👍</button>
+            <button class="emoji-btn" data-emoji="👎">👎</button>
+            <button class="emoji-btn" data-emoji="❤️">❤️</button>
+            <button class="emoji-btn" data-emoji="🔥">🔥</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
