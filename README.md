@@ -1,4 +1,4 @@
-# 🐂 TaurosApp Chat - Modern Web Chat Interface
+# TaurosApp_Mistral_Ready
 
 Una moderna interfaccia chat web con tema GitHub dark, progettata per offrire un'esperienza utente coinvolgente e accessibile.
 
