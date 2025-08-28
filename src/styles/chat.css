@@ -1,0 +1,24 @@
+:root{
+  --bg:#0f1724; --panel:#0b1220; --accent:#5eead4; --muted:#94a3b8; --you:#1f2937; --bot:#0b1220;
+  --radius:12px;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+.tauros-chat-root{display:flex;height:100vh;background:linear-gradient(180deg,#071126,#021020);color:#e6eef6}
+.tauros-sidebar{width:220px;padding:18px;background:rgba(0,0,0,0.18);backdrop-filter:blur(6px);box-shadow:inset 0 -1px 0 rgba(255,255,255,0.02)}
+.tauros-brand{font-weight:700;color:var(--accent);margin-bottom:12px}
+.tauros-nav button{display:block;width:100%;padding:10px;border-radius:8px;border:0;background:transparent;color:var(--muted);margin-bottom:6px;cursor:pointer}
+.tauros-nav button.active{background:rgba(94,234,212,0.08);color:var(--accent)}
+
+.tauros-main{flex:1;display:flex;flex-direction:column;padding:16px}
+.tauros-header{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.03);margin-bottom:8px}
+.chat-window{flex:1;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:10px}
+.chat-msg{max-width:78%;padding:10px 12px;border-radius:12px;position:relative;word-break:break-word}
+.chat-msg.sys{background:transparent;color:var(--muted);align-self:center;font-size:0.9rem}
+.chat-msg.in{align-self:flex-start;background:linear-gradient(180deg,#07132a,#071226);border:1px solid rgba(255,255,255,0.02);color:#d6eef0}
+.chat-msg.out{align-self:flex-end;background:linear-gradient(180deg,#1b2440,#121827);color:#e6eef6}
+.msg-time{font-size:0.7rem;color:var(--muted);margin-top:6px;opacity:0.8}
+
+.chat-input{display:flex;gap:8px;padding:12px;border-top:1px solid rgba(255,255,255,0.03);background:linear-gradient(180deg,rgba(0,0,0,0.12),rgba(0,0,0,0.06))}
+.chat-input textarea{flex:1;resize:none;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+.chat-input button{padding:10px 14px;border-radius:10px;border:0;background:var(--accent);color:#041017;cursor:pointer;font-weight:600}
