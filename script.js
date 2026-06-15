@@ -32,6 +32,9 @@ class TaurosChat {
         this.currentTheme = 'dark';
         this.typingTimeout = null;
         this.lastActivity = Date.now();
+        this.messageObserver = null;
+        this.ariaLiveRegion = document.getElementById('ariaLiveRegion');
+        this.attachmentInput = this.createAttachmentInput();
 
         // Auto-resize textarea
         this.setupAutoResize();
@@ -169,6 +172,9 @@ class TaurosChat {
         `;
         
         this.messagesContainer.appendChild(messageElement);
+        if (this.messageObserver) {
+            this.messageObserver.observe(messageElement);
+        }
         this.scrollToBottom();
         this.messageCount++;
         
@@ -177,14 +183,90 @@ class TaurosChat {
     }
 
     processMarkdown(text) {
-        // Basic markdown support
-        return text
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            .replace(/`(.*?)`/g, '<code>$1</code>')
-            .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+        const replacements = [];
+        const createPlaceholder = (html) => {
+            const placeholder = `__TAUROS_MD_${replacements.length}__`;
+            replacements.push({ placeholder, html });
+            return placeholder;
+        };
+
+        let processedText = text.replace(/```([\s\S]*?)```/g, (_, code) => {
+            return createPlaceholder(`<pre><code>${this.escapeHtml(code.trim())}</code></pre>`);
+        });
+
+        processedText = processedText.replace(/`([^`]+)`/g, (_, code) => {
+            return createPlaceholder(`<code>${this.escapeHtml(code)}</code>`);
+        });
+
+        processedText = processedText.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) => {
+            const safeUrl = this.sanitizeUrl(url);
+            const safeLabel = this.escapeHtml(label);
+            if (!safeUrl) {
+                return safeLabel;
+            }
+
+            return createPlaceholder(
+                `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeLabel}</a>`
+            );
+        });
+
+        processedText = this.escapeHtml(processedText)
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
             .replace(/\n/g, '<br>');
+
+        replacements.forEach(({ placeholder, html }) => {
+            processedText = processedText.replace(placeholder, html);
+        });
+
+        return processedText;
+    }
+
+    escapeHtml(text) {
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    sanitizeUrl(url) {
+        const trimmedUrl = url.trim();
+        if (!trimmedUrl) {
+            return null;
+        }
+
+        if (trimmedUrl.startsWith('#') || trimmedUrl.startsWith('/')) {
+            return this.escapeHtml(trimmedUrl);
+        }
+
+        try {
+            const parsedUrl = new URL(trimmedUrl, window.location.origin);
+            const allowedProtocols = ['http:', 'https:', 'mailto:', 'tel:'];
+
+            if (!allowedProtocols.includes(parsedUrl.protocol)) {
+                return null;
+            }
+
+            const normalizedUrl = ['mailto:', 'tel:'].includes(parsedUrl.protocol)
+                ? trimmedUrl
+                : parsedUrl.href;
+
+            return this.escapeHtml(normalizedUrl);
+        } catch {
+            return null;
+        }
+    }
+
+    createAttachmentInput() {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*,.pdf,.doc,.docx,.txt';
+        fileInput.style.display = 'none';
+        fileInput.addEventListener('change', (e) => this.handleAttachmentSelection(e));
+        document.body.appendChild(fileInput);
+        return fileInput;
     }
 
     simulateBotResponse(userMessage) {
@@ -276,10 +358,8 @@ class TaurosChat {
     toggleTheme() {
         this.currentTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', this.currentTheme);
-        
-        // Update theme icon
-        const themeIcon = this.themeToggle.querySelector('.theme-icon');
-        themeIcon.textContent = this.currentTheme === 'dark' ? '☀️' : '🌙';
+
+        this.updateThemeToggle();
         
         // Save to localStorage
         localStorage.setItem('tauros-chat-theme', this.currentTheme);
@@ -292,11 +372,18 @@ class TaurosChat {
         const savedTheme = localStorage.getItem('tauros-chat-theme');
         if (savedTheme) {
             this.currentTheme = savedTheme;
-            document.documentElement.setAttribute('data-theme', this.currentTheme);
-            
-            const themeIcon = this.themeToggle.querySelector('.theme-icon');
-            themeIcon.textContent = this.currentTheme === 'dark' ? '☀️' : '🌙';
         }
+
+        document.documentElement.setAttribute('data-theme', this.currentTheme);
+        this.updateThemeToggle();
+    }
+
+    updateThemeToggle() {
+        const themeIcon = this.themeToggle.querySelector('.theme-icon');
+        const nextThemeLabel = this.currentTheme === 'dark' ? 'chiaro' : 'scuro';
+
+        themeIcon.textContent = this.currentTheme === 'dark' ? '☀️' : '🌙';
+        this.themeToggle.setAttribute('aria-label', `Passa al tema ${nextThemeLabel}`);
     }
 
     toggleEmojiPicker() {
@@ -348,23 +435,18 @@ class TaurosChat {
     handleAttachment() {
         // Placeholder for file attachment functionality
         this.announceToScreenReader('Funzionalità allegati in sviluppo');
-        
-        // Create file input
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.accept = 'image/*,.pdf,.doc,.docx,.txt';
-        fileInput.style.display = 'none';
-        
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                this.addMessage(`📎 File allegato: ${file.name} (${this.formatFileSize(file.size)})`, 'user');
-            }
-            document.body.removeChild(fileInput);
-        });
-        
-        document.body.appendChild(fileInput);
-        fileInput.click();
+        this.attachmentInput.value = '';
+        this.attachmentInput.click();
+    }
+
+    handleAttachmentSelection(e) {
+        const [file] = e.target.files;
+        if (!file) {
+            return;
+        }
+
+        this.addMessage(`📎 File allegato: ${file.name} (${this.formatFileSize(file.size)})`, 'user');
+        e.target.value = '';
     }
 
     formatFileSize(bytes) {
@@ -414,7 +496,11 @@ class TaurosChat {
 
     setupIntersectionObserver() {
         // For future implementation of infinite scroll
-        const observer = new IntersectionObserver((entries) => {
+        if (!('IntersectionObserver' in window)) {
+            return;
+        }
+
+        this.messageObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     // Load more messages if needed
@@ -427,39 +513,26 @@ class TaurosChat {
 
         // Observe messages for read status (future feature)
         const messages = this.messagesContainer.querySelectorAll('.message');
-        messages.forEach(message => observer.observe(message));
+        messages.forEach(message => this.messageObserver.observe(message));
     }
 
     updateAriaLiveRegion(content, type) {
-        // Create or update ARIA live region for screen readers
-        let liveRegion = document.getElementById('ariaLiveRegion');
-        if (!liveRegion) {
-            liveRegion = document.createElement('div');
-            liveRegion.id = 'ariaLiveRegion';
-            liveRegion.className = 'visually-hidden';
-            liveRegion.setAttribute('aria-live', 'polite');
-            liveRegion.setAttribute('aria-atomic', 'true');
-            document.body.appendChild(liveRegion);
-        }
-        
         const announcement = type === 'user' ? 
             `Hai inviato: ${content}` : 
             `Nuovo messaggio: ${content}`;
         
-        liveRegion.textContent = announcement;
+        this.announceToScreenReader(announcement);
     }
 
     announceToScreenReader(message) {
-        let liveRegion = document.getElementById('ariaLiveRegion');
-        if (!liveRegion) {
-            liveRegion = document.createElement('div');
-            liveRegion.id = 'ariaLiveRegion';
-            liveRegion.className = 'visually-hidden';
-            liveRegion.setAttribute('aria-live', 'polite');
-            document.body.appendChild(liveRegion);
+        if (!this.ariaLiveRegion) {
+            return;
         }
-        
-        liveRegion.textContent = message;
+
+        this.ariaLiveRegion.textContent = '';
+        requestAnimationFrame(() => {
+            this.ariaLiveRegion.textContent = message;
+        });
     }
 
     setWelcomeTime() {
@@ -476,6 +549,14 @@ class TaurosChat {
         if (this.typingTimeout) {
             clearTimeout(this.typingTimeout);
         }
+
+        if (this.messageObserver) {
+            this.messageObserver.disconnect();
+        }
+
+        if (this.attachmentInput?.parentNode) {
+            this.attachmentInput.parentNode.removeChild(this.attachmentInput);
+        }
     }
 
     // Public API methods
@@ -486,6 +567,9 @@ class TaurosChat {
     clearMessages() {
         const messages = this.messagesContainer.querySelectorAll('.message:not(.system-message)');
         messages.forEach(message => {
+            if (this.messageObserver) {
+                this.messageObserver.unobserve(message);
+            }
             message.style.opacity = '0';
             message.style.transform = 'translateY(-20px)';
             setTimeout(() => message.remove(), 300);
