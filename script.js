@@ -35,6 +35,12 @@ class TaurosChat {
         this.messageObserver = null;
         this.ariaLiveRegion = document.getElementById('ariaLiveRegion');
         this.attachmentInput = this.createAttachmentInput();
+        this.chatHistory = [
+            {
+                role: 'system',
+                content: 'Sei Tauros, un assistente AI amichevole e competente. Rispondi in italiano salvo diversa richiesta dell\'utente.'
+            }
+        ];
 
         // Auto-resize textarea
         this.setupAutoResize();
@@ -133,22 +139,19 @@ class TaurosChat {
         }
     }
 
-    sendMessage() {
+    async sendMessage() {
         const message = this.messageInput.value.trim();
         if (!message) return;
 
         this.addMessage(message, 'user');
+        this.chatHistory.push({ role: 'user', content: message });
         this.messageInput.value = '';
         this.updateCharCount();
         this.autoResize();
-        
-        // Simulate bot response
-        this.simulateBotResponse(message);
-        
-        // Hide emoji picker
+
+        await this.fetchBotResponse();
+
         this.hideEmojiPicker();
-        
-        // Focus back to input
         this.messageInput.focus();
     }
 
@@ -269,17 +272,39 @@ class TaurosChat {
         return fileInput;
     }
 
-    simulateBotResponse(userMessage) {
-        // Show typing indicator
+    async fetchBotResponse() {
         this.showTypingIndicator();
-        
-        setTimeout(() => {
+
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages: this.chatHistory })
+            });
+
+            const data = await response.json();
             this.hideTypingIndicator();
-            
-            // Simple response logic
-            let response = this.generateBotResponse(userMessage);
-            this.addMessage(response, 'bot');
-        }, 1000 + Math.random() * 2000);
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Errore API');
+            }
+
+            const reply = data.reply;
+            this.chatHistory.push({ role: 'assistant', content: reply });
+            this.addMessage(reply, 'bot');
+            this.updateConnectionStatus(true);
+        } catch (error) {
+            this.hideTypingIndicator();
+            console.error('Mistral API error:', error);
+            this.updateConnectionStatus(false);
+
+            const lastUser = this.chatHistory.filter((m) => m.role === 'user').pop();
+            const fallback = this.generateBotResponse(lastUser?.content || '');
+            this.addMessage(
+                `${fallback}\n\n_(Modalità demo — aggiungi MISTRAL_API_KEY nelle env di Vercel)_`,
+                'bot'
+            );
+        }
     }
 
     generateBotResponse(message) {
